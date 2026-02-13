@@ -175,7 +175,7 @@ The full DDL is in [`backend/src/main/resources/db/schema.sql`](backend/src/main
 
 Before running the application, ensure you have the following installed:
 
-1. **Java 17+** — [Download from Adoptium](https://adoptium.net/)
+1. **Java 17+** — [Download from Oracle](https://www.oracle.com/java/technologies/downloads/)
    ```bash
    java -version
    ```
