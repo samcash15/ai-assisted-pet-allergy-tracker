@@ -4,6 +4,8 @@ A database-driven web application for tracking pet allergy symptoms, treatments,
 
 Built for **CS 5600 — Advanced Database Systems** (Spring 2026) at the University of California, Merced.
 
+> **Disclaimer:** All seeded data in this application is fictional and generated solely for demonstration purposes. It does not represent real veterinary records or medical data. This application is not a substitute for professional veterinary advice, diagnosis, or treatment. Always consult a licensed veterinarian for your pet's health concerns.
+
 ---
 
 ## Table of Contents
