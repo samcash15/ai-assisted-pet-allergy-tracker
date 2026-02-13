@@ -262,6 +262,26 @@ java -jar target/pet-allergy-tracker-1.0-SNAPSHOT.jar
 
 The application starts on **http://localhost:7070**.
 
+**If using IntelliJ IDEA**, you can skip the command-line build entirely:
+
+1. Open the `backend/` folder as a project in IntelliJ (or open the root folder and let IntelliJ detect the Maven `pom.xml`).
+2. Wait for IntelliJ to finish indexing and resolving Maven dependencies.
+3. Navigate to `src/main/java/com/petallergy/App.java`.
+4. Right-click the file and select **Run 'App.main()'** (or click the green play button next to the `main` method).
+5. The application will compile and start on **http://localhost:7070**.
+
+To browse the database directly in IntelliJ, open the **Database** tab (right sidebar, or **View > Tool Windows > Database**), click **+** > **Data Source** > **PostgreSQL**, and enter the following:
+
+| Field | Value |
+|---|---|
+| Host | `localhost` |
+| Port | `5432` |
+| Database | `pet_allergy_tracker` |
+| User | `postgres` |
+| Password | `postgres` |
+
+Click **Test Connection** to verify (download the PostgreSQL driver if prompted), then click **OK**. You can now browse all 9 tables, view data, and run SQL queries from within the IDE.
+
 On first startup, the application will:
 - Connect to PostgreSQL and create all 9 tables via `schema.sql`
 - Load 60 days of realistic sample data via `seed.sql` (a Golden Retriever named Finn with allergy history)
