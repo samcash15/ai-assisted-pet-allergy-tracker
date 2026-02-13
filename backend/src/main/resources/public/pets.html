@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets — Pet Allergy Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="bg-stone-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <img src="/img/logo.png" alt="PetAllergyTracker" class="w-8 h-8 rounded-lg object-cover">
+                    <span class="text-xl font-bold text-stone-800">PetAllergy<span class="text-teal-600">Tracker</span></span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Dashboard</a>
+                    <a href="/pets.html" class="nav-active py-4 text-sm font-medium">Pets</a>
+                    <a href="/chat.html" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Chat</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-stone-800">My Pets</h1>
+            <button id="btn-add-pet" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
+                + Add Pet
+            </button>
+        </div>
+
+        <div id="pet-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <div id="no-pets" class="hidden flex flex-col items-center py-16">
+            <svg class="w-16 h-16 text-stone-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <p class="text-stone-500 text-sm font-medium">No pets yet</p>
+            <p class="text-stone-400 text-xs mt-1">Add your first pet to start tracking</p>
+        </div>
+
+        <!-- Add Pet Modal -->
+        <div id="add-pet-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+                <h2 class="text-lg font-semibold text-stone-800 mb-4">Add New Pet</h2>
+                <form id="add-pet-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Name *</label>
+                        <input type="text" id="pet-name" required class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Species *</label>
+                        <input type="text" id="pet-species" required placeholder="Dog, Cat, etc." class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Breed</label>
+                        <input type="text" id="pet-breed" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Date of Birth</label>
+                        <input type="date" id="pet-dob" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" id="btn-cancel-pet" class="px-4 py-2 text-sm text-stone-600 hover:text-stone-800">Cancel</button>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/pets.js"></script>
+</body>
+</html>

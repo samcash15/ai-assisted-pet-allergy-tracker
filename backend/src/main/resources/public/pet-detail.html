@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Detail — Pet Allergy Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="bg-stone-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center space-x-2">
+                    <img src="/img/logo.png" alt="PetAllergyTracker" class="w-8 h-8 rounded-lg object-cover">
+                    <span class="text-xl font-bold text-stone-800">PetAllergy<span class="text-teal-600">Tracker</span></span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Dashboard</a>
+                    <a href="/pets.html" class="nav-active py-4 text-sm font-medium">Pets</a>
+                    <a href="/chat.html" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Chat</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        <!-- Pet Header with stats -->
+        <div id="pet-header" class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div id="pet-avatar" class="w-14 h-14 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-2xl font-bold"></div>
+                    <div>
+                        <h1 id="pet-name" class="text-2xl font-bold text-stone-800"></h1>
+                        <p id="pet-info" class="text-stone-500 text-sm mt-0.5"></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="text-center">
+                        <p id="pet-symptom-count" class="text-lg font-bold text-stone-800">--</p>
+                        <p class="text-xs text-stone-400">symptoms</p>
+                    </div>
+                    <div class="text-center">
+                        <p id="pet-avg-severity" class="text-lg font-bold text-stone-800">--</p>
+                        <p class="text-xs text-stone-400">avg severity</p>
+                    </div>
+                    <div class="text-center">
+                        <p id="pet-treatment-count" class="text-lg font-bold text-stone-800">--</p>
+                        <p class="text-xs text-stone-400">treatments</p>
+                    </div>
+                    <a href="/pets.html" class="text-sm text-teal-600 hover:text-teal-800 font-medium">&larr; Back</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pill Tabs -->
+        <div class="flex space-x-1 bg-stone-100 rounded-lg p-1 mb-6 w-fit">
+            <button class="tab-btn tab-active rounded-md px-4 py-2 text-sm font-medium transition-colors" data-tab="symptoms">Symptoms</button>
+            <button class="tab-btn rounded-md px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors" data-tab="treatments">Treatments</button>
+            <button class="tab-btn rounded-md px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors" data-tab="env-factors">Environment</button>
+        </div>
+
+        <!-- Symptoms Tab -->
+        <div id="tab-symptoms" class="tab-content">
+            <div class="flex items-end space-x-3 mb-4">
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">From</label>
+                    <input type="date" id="symptom-from" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">To</label>
+                    <input type="date" id="symptom-to" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <button id="btn-filter-symptoms" class="bg-stone-100 px-3 py-1.5 rounded-lg text-sm hover:bg-stone-200 transition-colors">Filter</button>
+                <button id="btn-clear-symptom-filter" class="text-sm text-stone-500 hover:text-stone-700">Clear</button>
+                <div class="flex-grow"></div>
+                <button id="btn-add-symptom" class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">+ Log Symptom</button>
+            </div>
+
+            <div id="symptom-form-container" class="form-panel bg-teal-50 rounded-xl p-4 border border-teal-200">
+                <h3 class="font-medium text-sm text-stone-700 mb-3">Log New Symptom</h3>
+                <form id="symptom-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Type *</label>
+                        <select id="symptom-type-select" required class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Severity</label>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-stone-400">Mild</span>
+                            <input type="range" id="symptom-severity" min="1" max="10" value="5" class="flex-grow">
+                            <span class="text-xs text-stone-400">Severe</span>
+                            <span id="severity-value" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700 text-sm font-bold">5</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Date/Time</label>
+                        <input type="datetime-local" id="symptom-datetime" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Notes</label>
+                        <input type="text" id="symptom-notes" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="Optional notes">
+                    </div>
+                    <div class="md:col-span-4 flex justify-end space-x-2">
+                        <button type="button" id="btn-cancel-symptom" class="px-3 py-1.5 text-sm text-stone-600 hover:text-stone-800">Cancel</button>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-teal-700">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-stone-500 border-b border-stone-200">
+                            <th class="p-3 font-medium">Date</th>
+                            <th class="p-3 font-medium">Symptom</th>
+                            <th class="p-3 font-medium">Severity</th>
+                            <th class="p-3 font-medium">Notes</th>
+                            <th class="p-3 font-medium w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="symptom-table-body"></tbody>
+                </table>
+                <div id="no-symptoms" class="hidden flex flex-col items-center py-8">
+                    <svg class="w-12 h-12 text-stone-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <p class="text-stone-400 text-sm">No symptom logs yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatments Tab -->
+        <div id="tab-treatments" class="tab-content hidden">
+            <div class="flex items-end space-x-3 mb-4">
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">From</label>
+                    <input type="date" id="treatment-from" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">To</label>
+                    <input type="date" id="treatment-to" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <button id="btn-filter-treatments" class="bg-stone-100 px-3 py-1.5 rounded-lg text-sm hover:bg-stone-200 transition-colors">Filter</button>
+                <button id="btn-clear-treatment-filter" class="text-sm text-stone-500 hover:text-stone-700">Clear</button>
+                <div class="flex-grow"></div>
+                <button id="btn-add-treatment" class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">+ Log Treatment</button>
+            </div>
+
+            <div id="treatment-form-container" class="form-panel bg-teal-50 rounded-xl p-4 border border-teal-200">
+                <h3 class="font-medium text-sm text-stone-700 mb-3">Log New Treatment</h3>
+                <form id="treatment-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Treatment *</label>
+                        <select id="treatment-type-select" required class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Dosage</label>
+                        <input type="text" id="treatment-dosage" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., 16mg tablet">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Date/Time</label>
+                        <input type="datetime-local" id="treatment-datetime" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Notes</label>
+                        <input type="text" id="treatment-notes" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="Optional notes">
+                    </div>
+                    <div class="md:col-span-4 flex justify-end space-x-2">
+                        <button type="button" id="btn-cancel-treatment" class="px-3 py-1.5 text-sm text-stone-600 hover:text-stone-800">Cancel</button>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-teal-700">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-stone-500 border-b border-stone-200">
+                            <th class="p-3 font-medium">Date</th>
+                            <th class="p-3 font-medium">Treatment</th>
+                            <th class="p-3 font-medium">Type</th>
+                            <th class="p-3 font-medium">Dosage</th>
+                            <th class="p-3 font-medium">Notes</th>
+                            <th class="p-3 font-medium w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="treatment-table-body"></tbody>
+                </table>
+                <div id="no-treatments" class="hidden flex flex-col items-center py-8">
+                    <svg class="w-12 h-12 text-stone-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    <p class="text-stone-400 text-sm">No treatment logs yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environmental Factors Tab -->
+        <div id="tab-env-factors" class="tab-content hidden">
+            <div class="flex items-end space-x-3 mb-4">
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">From</label>
+                    <input type="date" id="env-from" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-stone-500 mb-1">To</label>
+                    <input type="date" id="env-to" class="border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                </div>
+                <button id="btn-filter-env" class="bg-stone-100 px-3 py-1.5 rounded-lg text-sm hover:bg-stone-200 transition-colors">Filter</button>
+                <button id="btn-clear-env-filter" class="text-sm text-stone-500 hover:text-stone-700">Clear</button>
+                <div class="flex-grow"></div>
+                <button id="btn-add-env" class="bg-teal-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">+ Log Factor</button>
+            </div>
+
+            <div id="env-form-container" class="form-panel bg-teal-50 rounded-xl p-4 border border-teal-200">
+                <h3 class="font-medium text-sm text-stone-700 mb-3">Log Environmental Factor</h3>
+                <form id="env-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Factor Type *</label>
+                        <select id="env-type-select" required class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Value *</label>
+                        <input type="number" step="0.01" id="env-value" required class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., 8.5">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Date/Time</label>
+                        <input type="datetime-local" id="env-datetime" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-stone-600 mb-1">Notes</label>
+                        <input type="text" id="env-notes" class="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="Optional notes">
+                    </div>
+                    <div class="md:col-span-4 flex justify-end space-x-2">
+                        <button type="button" id="btn-cancel-env" class="px-3 py-1.5 text-sm text-stone-600 hover:text-stone-800">Cancel</button>
+                        <button type="submit" class="bg-teal-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-teal-700">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-stone-500 border-b border-stone-200">
+                            <th class="p-3 font-medium">Date</th>
+                            <th class="p-3 font-medium">Factor</th>
+                            <th class="p-3 font-medium">Value</th>
+                            <th class="p-3 font-medium">Notes</th>
+                            <th class="p-3 font-medium w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="env-table-body"></tbody>
+                </table>
+                <div id="no-env" class="hidden flex flex-col items-center py-8">
+                    <svg class="w-12 h-12 text-stone-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                    <p class="text-stone-400 text-sm">No environmental factor logs yet</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/pet-detail.js"></script>
+</body>
+</html>
