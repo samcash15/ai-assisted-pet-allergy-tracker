@@ -107,6 +107,59 @@ function showError(message) {
     showToast(message, 'error');
 }
 
+function showConfirm(title, message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 confirm-overlay';
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.15s ease';
+
+        overlay.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-150 confirm-panel">
+                <div class="flex items-start space-x-4 mb-5">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">${title}</h3>
+                        <p class="text-sm text-slate-500 mt-1 leading-relaxed">${message}</p>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="confirm-cancel" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button id="confirm-delete" class="px-4 py-2.5 text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition-colors">Delete</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            overlay.querySelector('.confirm-panel').style.transform = 'scale(1)';
+        });
+
+        const close = (result) => {
+            overlay.style.opacity = '0';
+            document.removeEventListener('keydown', handleKey);
+            setTimeout(() => { overlay.remove(); resolve(result); }, 150);
+        };
+
+        overlay.querySelector('#confirm-cancel').addEventListener('click', () => close(false));
+        overlay.querySelector('#confirm-delete').addEventListener('click', () => close(true));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+
+        const handleKey = (e) => {
+            if (e.key === 'Escape') close(false);
+            if (e.key === 'Enter') close(true);
+        };
+        document.addEventListener('keydown', handleKey);
+
+        setTimeout(() => overlay.querySelector('#confirm-cancel').focus(), 50);
+    });
+}
+
 /**
  * Render an inline SVG sparkline into a container element.
  */
@@ -155,12 +208,12 @@ function renderHorizontalBars(containerId, items, maxValue) {
         const pct = Math.round((item.value / maxValue) * 100);
         return `
             <div class="flex items-center space-x-3">
-                <span class="text-xs text-stone-600 w-28 truncate">${item.label}</span>
-                <div class="flex-grow bg-stone-100 rounded-full h-2 overflow-hidden">
+                <span class="text-xs text-slate-600 w-28 truncate">${item.label}</span>
+                <div class="flex-grow bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div class="h-full rounded-full ${item.color || 'bg-teal-500'} transition-all duration-700"
                          style="width: ${pct}%"></div>
                 </div>
-                <span class="text-xs font-medium text-stone-500 w-8 text-right">${item.value}</span>
+                <span class="text-xs font-medium text-slate-500 w-8 text-right">${item.value}</span>
             </div>
         `;
     }).join('');
@@ -181,15 +234,15 @@ function renderSeverityDistribution(containerId, symptoms) {
     const total = symptoms.length || 1;
 
     container.innerHTML = `
-        <div class="flex rounded-full overflow-hidden h-4 bg-stone-100">
+        <div class="flex rounded-full overflow-hidden h-4 bg-slate-100">
             <div class="bg-emerald-400 transition-all duration-700" style="width: ${(buckets.low / total) * 100}%"></div>
             <div class="bg-amber-400 transition-all duration-700" style="width: ${(buckets.mid / total) * 100}%"></div>
             <div class="bg-rose-400 transition-all duration-700" style="width: ${(buckets.high / total) * 100}%"></div>
         </div>
-        <div class="flex justify-between mt-3 text-xs text-stone-500">
-            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span><span>Low 1-3 (${buckets.low})</span></span>
-            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span><span>Medium 4-6 (${buckets.mid})</span></span>
-            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400 inline-block"></span><span>High 7-10 (${buckets.high})</span></span>
+        <div class="flex justify-between mt-3 text-xs text-slate-500">
+            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span><span>Low 1–3 (${buckets.low})</span></span>
+            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span><span>Med 4–6 (${buckets.mid})</span></span>
+            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400 inline-block"></span><span>High 7–10 (${buckets.high})</span></span>
         </div>
     `;
 }

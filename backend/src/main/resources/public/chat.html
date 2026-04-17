@@ -5,28 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat — Pet Allergy Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="bg-stone-50 min-h-screen flex flex-col">
-    <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-40">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex items-center justify-between h-14">
-                <div class="flex items-center space-x-2">
-                    <img src="/img/logo.png" alt="PetAllergyTracker" class="w-8 h-8 rounded-lg object-cover">
-                    <span class="text-xl font-bold text-stone-800">PetAllergy<span class="text-teal-600">Tracker</span></span>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="bg-slate-900 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <img src="/img/logo.svg" alt="PetAllergyTracker" class="w-8 h-8 rounded-lg object-cover">
+                    <span class="text-lg font-bold text-white">PetAllergy<span class="text-teal-400">Tracker</span></span>
                 </div>
-                <div class="flex space-x-6">
-                    <a href="/" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Dashboard</a>
-                    <a href="/pets.html" class="py-4 text-sm font-medium text-stone-500 hover:text-stone-700">Pets</a>
-                    <a href="/chat.html" class="nav-active py-4 text-sm font-medium">Chat</a>
+                <div class="flex items-center space-x-1">
+                    <a href="/" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Dashboard</a>
+                    <a href="/pets.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Pets</a>
+                    <a href="/chat.html" class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 text-white">Chat</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <main class="flex-grow flex flex-col max-w-4xl mx-auto w-full px-4 py-6">
+
         <!-- Chat Messages -->
-        <div id="chat-messages" class="flex-grow overflow-y-auto mb-4 space-y-5 scroll-smooth" style="min-height: 300px; max-height: calc(100vh - 260px);">
+        <div id="chat-messages" class="flex-grow overflow-y-auto mb-4 space-y-5 scroll-smooth" style="min-height: 300px; max-height: calc(100vh - 200px);">
+
             <!-- Empty state -->
             <div id="chat-empty" class="flex flex-col items-center justify-center py-16">
                 <div class="w-16 h-16 rounded-2xl bg-teal-100 flex items-center justify-center mb-4">
@@ -34,42 +40,20 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                     </svg>
                 </div>
-                <h2 class="text-lg font-semibold text-stone-800 mb-1">Allergy Data Chat</h2>
-                <p class="text-sm text-stone-500 mb-6 text-center max-w-md">Ask questions about your pet's allergy data in plain English. The AI will query the database and summarize the results.</p>
+                <h2 class="text-lg font-bold text-slate-900 mb-1">Allergy Data Chat</h2>
+                <p class="text-sm text-slate-500 mb-8 text-center max-w-md">Ask questions about your pet's allergy data in plain English. The AI will query the database and summarize the results.</p>
 
-                <!-- Categorized suggestion chips -->
-                <div class="w-full max-w-lg space-y-3">
-                    <div>
-                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wide mb-1.5">Symptoms</p>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">What are Finn's most common symptoms?</button>
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">Show average severity by month</button>
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wide mb-1.5">Treatments</p>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">Which treatments helped reduce itching?</button>
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">How often does Finn get Apoquel?</button>
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wide mb-1.5">Environment</p>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">Is there a correlation between pollen and symptoms?</button>
-                            <button class="example-prompt bg-white border border-stone-200 rounded-full px-3 py-1.5 text-xs text-stone-600 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700 transition-colors">What was the average pollen count last month?</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Suggestion chips — populated dynamically by chat.js -->
+                <div id="chat-suggestions" class="w-full max-w-lg space-y-4"></div>
             </div>
         </div>
 
         <!-- Input bar -->
-        <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2">
             <form id="chat-form" class="flex items-center space-x-2">
                 <input type="text" id="chat-input" placeholder="Ask about your pet's allergy data..."
-                       class="flex-grow border-0 bg-transparent px-3 py-2 text-sm focus:ring-0 focus:outline-none text-stone-800 placeholder-stone-400">
-                <button type="submit" id="btn-send" class="bg-teal-600 text-white p-2.5 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
+                       class="flex-grow border-0 bg-transparent px-3 py-2 text-sm focus:ring-0 focus:outline-none text-slate-900 placeholder-slate-400">
+                <button type="submit" id="btn-send" class="bg-teal-600 text-white p-2.5 rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                     </svg>

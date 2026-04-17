@@ -16,14 +16,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         pets.forEach((pet, i) => {
             const btn = document.createElement('button');
             btn.className = i === 0
-                ? 'px-3 py-1 rounded-full text-sm font-medium bg-teal-600 text-white'
-                : 'px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-600 hover:bg-stone-200';
+                ? 'px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30'
+                : 'px-3 py-1 rounded-full text-sm font-medium bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors';
             btn.textContent = pet.name;
             btn.addEventListener('click', () => {
                 switcher.querySelectorAll('button').forEach(b => {
-                    b.className = 'px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-600 hover:bg-stone-200';
+                    b.className = 'px-3 py-1 rounded-full text-sm font-medium bg-white/10 text-white/60 hover:bg-white/20 hover:text-white transition-colors';
                 });
-                btn.className = 'px-3 py-1 rounded-full text-sm font-medium bg-teal-600 text-white';
+                btn.className = 'px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30';
                 loadDashboard(pet.petId, pet.name);
             });
             switcher.appendChild(btn);
@@ -93,20 +93,20 @@ async function loadDashboard(petId, petName) {
 
         recent.forEach(s => {
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-stone-100 hover:bg-stone-50';
+            tr.className = 'hover:bg-slate-50 transition-colors';
             tr.innerHTML = `
-                <td class="py-3 pr-3 text-stone-600">${timeAgo(s.loggedAt)}</td>
-                <td class="py-3 pr-3 font-medium text-stone-800">${petName}</td>
-                <td class="py-3 pr-3">${s.symptomTypeName || '\u2014'}</td>
-                <td class="py-3 pr-3">
+                <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${timeAgo(s.loggedAt)}</td>
+                <td class="px-6 py-4 font-medium text-slate-900">${petName}</td>
+                <td class="px-6 py-4 text-slate-700">${s.symptomTypeName || '\u2014'}</td>
+                <td class="px-6 py-4">
                     <div class="flex items-center space-x-2">
-                        <div class="w-16 bg-stone-100 rounded-full h-1.5">
+                        <div class="w-16 bg-slate-100 rounded-full h-1.5">
                             <div class="h-1.5 rounded-full ${severityBarColor(s.severity)}" style="width: ${s.severity * 10}%"></div>
                         </div>
-                        <span class="text-xs font-medium text-stone-600">${s.severity}</span>
+                        <span class="text-xs font-semibold text-slate-600">${s.severity}</span>
                     </div>
                 </td>
-                <td class="py-3 text-stone-400 max-w-xs truncate">${s.notes || '\u2014'}</td>
+                <td class="px-6 py-4 text-slate-400 max-w-xs truncate">${s.notes || '\u2014'}</td>
             `;
             tbody.appendChild(tr);
         });

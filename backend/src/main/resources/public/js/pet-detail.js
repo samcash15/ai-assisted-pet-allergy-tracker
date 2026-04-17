@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => {
                 b.classList.remove('tab-active');
-                b.classList.add('text-stone-500');
+                b.classList.add('text-slate-500');
             });
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             btn.classList.add('tab-active');
-            btn.classList.remove('text-stone-500');
+            btn.classList.remove('text-slate-500');
             document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
         });
     });
@@ -108,27 +108,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             symptoms.forEach(s => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-stone-100 hover:bg-stone-50';
+                tr.className = 'hover:bg-slate-50 transition-colors';
                 tr.innerHTML = `
-                    <td class="p-3 text-stone-600">${formatDateTime(s.loggedAt)}</td>
-                    <td class="p-3 font-medium">${s.symptomTypeName || '\u2014'}</td>
-                    <td class="p-3">
+                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">${formatDateTime(s.loggedAt)}</td>
+                    <td class="px-5 py-3.5 font-medium text-slate-900">${s.symptomTypeName || '\u2014'}</td>
+                    <td class="px-5 py-3.5">
                         <div class="flex items-center space-x-2">
-                            <div class="w-16 bg-stone-100 rounded-full h-1.5">
+                            <div class="w-16 bg-slate-100 rounded-full h-1.5">
                                 <div class="h-1.5 rounded-full ${severityBarColor(s.severity)}" style="width: ${s.severity * 10}%"></div>
                             </div>
-                            <span class="text-xs font-medium text-stone-600">${s.severity}</span>
+                            <span class="text-xs font-semibold text-slate-600">${s.severity}</span>
                         </div>
                     </td>
-                    <td class="p-3 text-stone-400 max-w-xs truncate">${s.notes || '\u2014'}</td>
-                    <td class="p-3"><button class="text-rose-500 hover:text-rose-700 text-xs delete-symptom" data-id="${s.symptomLogId}">Delete</button></td>
+                    <td class="px-5 py-3.5 text-slate-400 max-w-xs truncate">${s.notes || '\u2014'}</td>
+                    <td class="px-5 py-3.5"><button class="text-rose-400 hover:text-rose-600 text-xs font-medium delete-symptom" data-id="${s.symptomLogId}" data-label="${s.symptomTypeName || 'symptom'} logged ${timeAgo(s.loggedAt)}">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
             tbody.querySelectorAll('.delete-symptom').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Delete this symptom log?')) return;
-                    try { await api.del(`/api/symptoms/${btn.dataset.id}`); showToast('Deleted', 'info'); loadSymptoms(); }
+                    const ok = await showConfirm('Delete Symptom Log', `Are you sure you want to delete <strong>${btn.dataset.label}</strong>? This cannot be undone.`);
+                    if (!ok) return;
+                    try { await api.del(`/api/symptoms/${btn.dataset.id}`); showToast('Symptom deleted', 'info'); loadSymptoms(); }
                     catch (err) { showError('Delete failed: ' + err.message); }
                 });
             });
@@ -193,21 +194,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             treatments.forEach(t => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-stone-100 hover:bg-stone-50';
+                tr.className = 'hover:bg-slate-50 transition-colors';
                 tr.innerHTML = `
-                    <td class="p-3 text-stone-600">${formatDateTime(t.administeredAt)}</td>
-                    <td class="p-3 font-medium">${t.treatmentName || '\u2014'}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700">${t.treatmentType || '\u2014'}</span></td>
-                    <td class="p-3">${t.dosage || '\u2014'}</td>
-                    <td class="p-3 text-stone-400 max-w-xs truncate">${t.notes || '\u2014'}</td>
-                    <td class="p-3"><button class="text-rose-500 hover:text-rose-700 text-xs delete-treatment" data-id="${t.treatmentLogId}">Delete</button></td>
+                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">${formatDateTime(t.administeredAt)}</td>
+                    <td class="px-5 py-3.5 font-medium text-slate-900">${t.treatmentName || '\u2014'}</td>
+                    <td class="px-5 py-3.5"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">${t.treatmentType || '\u2014'}</span></td>
+                    <td class="px-5 py-3.5 text-slate-700">${t.dosage || '\u2014'}</td>
+                    <td class="px-5 py-3.5 text-slate-400 max-w-xs truncate">${t.notes || '\u2014'}</td>
+                    <td class="px-5 py-3.5"><button class="text-rose-400 hover:text-rose-600 text-xs font-medium delete-treatment" data-id="${t.treatmentLogId}" data-label="${t.treatmentName || 'treatment'} administered ${timeAgo(t.administeredAt)}">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
             tbody.querySelectorAll('.delete-treatment').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Delete this treatment log?')) return;
-                    try { await api.del(`/api/treatments/${btn.dataset.id}`); showToast('Deleted', 'info'); loadTreatments(); }
+                    const ok = await showConfirm('Delete Treatment Log', `Are you sure you want to delete <strong>${btn.dataset.label}</strong>? This cannot be undone.`);
+                    if (!ok) return;
+                    try { await api.del(`/api/treatments/${btn.dataset.id}`); showToast('Treatment deleted', 'info'); loadTreatments(); }
                     catch (err) { showError('Delete failed: ' + err.message); }
                 });
             });
@@ -271,20 +273,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             factors.forEach(f => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-stone-100 hover:bg-stone-50';
+                tr.className = 'hover:bg-slate-50 transition-colors';
                 tr.innerHTML = `
-                    <td class="p-3 text-stone-600">${formatDateTime(f.loggedAt)}</td>
-                    <td class="p-3 font-medium">${f.envFactorTypeName || '\u2014'}</td>
-                    <td class="p-3">${f.value}${f.envFactorTypeUnit ? ' ' + f.envFactorTypeUnit : ''}</td>
-                    <td class="p-3 text-stone-400 max-w-xs truncate">${f.notes || '\u2014'}</td>
-                    <td class="p-3"><button class="text-rose-500 hover:text-rose-700 text-xs delete-env" data-id="${f.envFactorLogId}">Delete</button></td>
+                    <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">${formatDateTime(f.loggedAt)}</td>
+                    <td class="px-5 py-3.5 font-medium text-slate-900">${f.envFactorTypeName || '\u2014'}</td>
+                    <td class="px-5 py-3.5 text-slate-700">${f.value}${f.envFactorTypeUnit ? ' ' + f.envFactorTypeUnit : ''}</td>
+                    <td class="px-5 py-3.5 text-slate-400 max-w-xs truncate">${f.notes || '\u2014'}</td>
+                    <td class="px-5 py-3.5"><button class="text-rose-400 hover:text-rose-600 text-xs font-medium delete-env" data-id="${f.envFactorLogId}" data-label="${f.envFactorTypeName || 'factor'} logged ${timeAgo(f.loggedAt)}">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
             tbody.querySelectorAll('.delete-env').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Delete this environmental factor log?')) return;
-                    try { await api.del(`/api/env-factors/${btn.dataset.id}`); showToast('Deleted', 'info'); loadEnvFactors(); }
+                    const ok = await showConfirm('Delete Environmental Log', `Are you sure you want to delete <strong>${btn.dataset.label}</strong>? This cannot be undone.`);
+                    if (!ok) return;
+                    try { await api.del(`/api/env-factors/${btn.dataset.id}`); showToast('Factor deleted', 'info'); loadEnvFactors(); }
                     catch (err) { showError('Delete failed: ' + err.message); }
                 });
             });
