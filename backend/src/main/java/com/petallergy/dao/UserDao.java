@@ -1,36 +1,30 @@
 package com.petallergy.dao;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.petallergy.model.User;
-
-import javax.sql.DataSource;
-import java.sql.*;
+import org.bson.Document;
 
 public class UserDao {
 
-    private final DataSource ds;
+    private final MongoCollection<Document> collection;
 
-    public UserDao(DataSource ds) {
-        this.ds = ds;
+    public UserDao(MongoDatabase db) {
+        this.collection = db.getCollection("users");
     }
 
-    public User findById(int userId) throws SQLException {
-        String sql = "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
-                return null;
-            }
-        }
+    public User findById(int userId) {
+        Document doc = collection.find(Filters.eq("_id", userId)).first();
+        return doc != null ? mapDoc(doc) : null;
     }
 
-    private User mapRow(ResultSet rs) throws SQLException {
+    private User mapDoc(Document doc) {
         User u = new User();
-        u.setUserId(rs.getInt("user_id"));
-        u.setUsername(rs.getString("username"));
-        u.setEmail(rs.getString("email"));
-        u.setCreatedAt(rs.getTimestamp("created_at").toInstant());
+        u.setUserId(doc.getInteger("_id"));
+        u.setUsername(doc.getString("username"));
+        u.setEmail(doc.getString("email"));
+        u.setCreatedAt(doc.getDate("createdAt").toInstant());
         return u;
     }
 }

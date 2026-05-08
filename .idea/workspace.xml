@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0de17644-0d9b-447b-8bb7-b14660f92c2b" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-tracker.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/CS5600DESIGN_23405_Group2.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/CS5600_GroupProjectFinalReport Spring 2026 (1).docx.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-symptom-tracking-system.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/App.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/config/DatabaseConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/config/DatabaseConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/EnvFactorLogDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/EnvFactorLogDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/EnvFactorTypeDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/EnvFactorTypeDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/LlmQueryLogDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/LlmQueryLogDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/PetDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/PetDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/SymptomLogDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/SymptomLogDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/SymptomTypeDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/SymptomTypeDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/TreatmentDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/TreatmentDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/TreatmentLogDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/TreatmentLogDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/UserDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/dao/UserDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/service/OllamaService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/petallergy/service/OllamaService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/schema.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/seed.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/public/js/chat.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/resources/public/js/chat.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/App.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/config/DatabaseConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/controller/ChatController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/controller/EnvFactorController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/controller/PetController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/controller/SymptomController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/controller/TreatmentController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/EnvFactorLogDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/EnvFactorTypeDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/LlmQueryLogDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/PetDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/SymptomLogDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/SymptomTypeDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/TreatmentDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/TreatmentLogDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/dao/UserDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/EnvFactorLog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/EnvFactorType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/LlmQueryLog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/Pet.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/SymptomLog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/SymptomType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/Treatment.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/TreatmentLog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/model/User.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/service/OllamaService$OllamaUnavailableException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/service/OllamaService$SqlRejectionException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/com/petallergy/service/OllamaService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/db/schema.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/db/seed.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/logback.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/chat.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/css/app.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/img/logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/js/api.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/js/chat.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/js/dashboard.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/js/pet-detail.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/js/pets.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/pet-detail.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/public/pets.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/maven-archiver/pom.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/original-pet-allergy-tracker-1.0-SNAPSHOT.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/pet-allergy-tracker-1.0-SNAPSHOT.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/CS5600_ProjectDesc_Spring 2026.docx.pdf" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "samcash15"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/samcash15/ai-assisted-pet-allergy-tracker.git",
+    "accountId": "636a10fb-44c9-4545-b260-72e18b9a42c5"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="3DQFIOMGKCWchDyD9OCv1FgOvhb" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.App.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "profiler.jvm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.petallergy.App" />
+      <module name="pet-allergy-tracker" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.petallergy.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.App" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0de17644-0d9b-447b-8bb7-b14660f92c2b" name="Changes" comment="" />
+      <created>1778206307120</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1778206307120</updated>
+      <workItem from="1778206307841" duration="937000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

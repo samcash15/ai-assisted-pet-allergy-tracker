@@ -1,48 +1,38 @@
 package com.petallergy.dao;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import com.petallergy.model.SymptomType;
+import org.bson.Document;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class SymptomTypeDao {
 
-    private final DataSource ds;
+    private final MongoCollection<Document> collection;
 
-    public SymptomTypeDao(DataSource ds) {
-        this.ds = ds;
+    public SymptomTypeDao(MongoDatabase db) {
+        this.collection = db.getCollection("symptom_types");
     }
 
-    public List<SymptomType> findAll() throws SQLException {
-        String sql = "SELECT symptom_type_id, name, description FROM symptom_types ORDER BY name";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            List<SymptomType> types = new ArrayList<>();
-            while (rs.next()) types.add(mapRow(rs));
-            return types;
-        }
+    public List<SymptomType> findAll() {
+        List<SymptomType> types = new ArrayList<>();
+        collection.find().sort(Sorts.ascending("name")).forEach(doc -> types.add(mapDoc(doc)));
+        return types;
     }
 
-    public SymptomType findById(int id) throws SQLException {
-        String sql = "SELECT symptom_type_id, name, description FROM symptom_types WHERE symptom_type_id = ?";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
-                return null;
-            }
-        }
+    public SymptomType findById(int id) {
+        Document doc = collection.find(Filters.eq("_id", id)).first();
+        return doc != null ? mapDoc(doc) : null;
     }
 
-    private SymptomType mapRow(ResultSet rs) throws SQLException {
+    private SymptomType mapDoc(Document doc) {
         SymptomType st = new SymptomType();
-        st.setSymptomTypeId(rs.getInt("symptom_type_id"));
-        st.setName(rs.getString("name"));
-        st.setDescription(rs.getString("description"));
+        st.setSymptomTypeId(doc.getInteger("_id"));
+        st.setName(doc.getString("name"));
+        st.setDescription(doc.getString("description"));
         return st;
     }
 }

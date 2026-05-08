@@ -1,67 +1,63 @@
 package com.petallergy.dao;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+import com.petallergy.config.DatabaseConfig;
 import com.petallergy.model.LlmQueryLog;
+import org.bson.Document;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
 
 public class LlmQueryLogDao {
 
-    private final DataSource ds;
+    private final MongoCollection<Document> collection;
 
-    public LlmQueryLogDao(DataSource ds) {
-        this.ds = ds;
+    public LlmQueryLogDao(MongoDatabase db) {
+        this.collection = db.getCollection("llm_query_logs");
     }
 
-    public List<LlmQueryLog> findByUserId(int userId) throws SQLException {
-        String sql = "SELECT query_log_id, user_id, natural_language_query, generated_sql, " +
-                     "response_summary, success, error_message, created_at " +
-                     "FROM llm_query_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 50";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<LlmQueryLog> logs = new ArrayList<>();
-                while (rs.next()) logs.add(mapRow(rs));
-                return logs;
-            }
-        }
+    public List<LlmQueryLog> findByUserId(int userId) {
+        List<LlmQueryLog> logs = new ArrayList<>();
+        collection.find(Filters.eq("user_id", userId))
+                  .sort(Sorts.descending("created_at"))
+                  .limit(50)
+                  .forEach(doc -> logs.add(mapDoc(doc)));
+        return logs;
     }
 
-    public LlmQueryLog insert(LlmQueryLog log) throws SQLException {
-        String sql = "INSERT INTO llm_query_logs (user_id, natural_language_query, generated_sql, " +
-                     "response_summary, success, error_message) " +
-                     "VALUES (?, ?, ?, ?, ?, ?) RETURNING query_log_id, created_at";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, log.getUserId());
-            ps.setString(2, log.getNaturalLanguageQuery());
-            ps.setString(3, log.getGeneratedSql());
-            ps.setString(4, log.getResponseSummary());
-            ps.setBoolean(5, log.isSuccess());
-            ps.setString(6, log.getErrorMessage());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    log.setQueryLogId(rs.getInt("query_log_id"));
-                    log.setCreatedAt(rs.getTimestamp("created_at").toInstant());
-                }
-            }
-        }
+    public LlmQueryLog insert(LlmQueryLog log) {
+        int id = DatabaseConfig.getNextId("llm_query_logs");
+        log.setQueryLogId(id);
+        Instant now = Instant.now();
+        log.setCreatedAt(now);
+
+        Document doc = new Document("_id", id)
+            .append("user_id", log.getUserId())
+            .append("natural_language_query", log.getNaturalLanguageQuery())
+            .append("generated_sql", log.getGeneratedSql())
+            .append("response_summary", log.getResponseSummary())
+            .append("success", log.isSuccess())
+            .append("error_message", log.getErrorMessage())
+            .append("created_at", Date.from(now));
+
+        collection.insertOne(doc);
         return log;
     }
 
-    private LlmQueryLog mapRow(ResultSet rs) throws SQLException {
+    private LlmQueryLog mapDoc(Document doc) {
         LlmQueryLog log = new LlmQueryLog();
-        log.setQueryLogId(rs.getInt("query_log_id"));
-        log.setUserId(rs.getInt("user_id"));
-        log.setNaturalLanguageQuery(rs.getString("natural_language_query"));
-        log.setGeneratedSql(rs.getString("generated_sql"));
-        log.setResponseSummary(rs.getString("response_summary"));
-        log.setSuccess(rs.getBoolean("success"));
-        log.setErrorMessage(rs.getString("error_message"));
-        log.setCreatedAt(rs.getTimestamp("created_at").toInstant());
+        log.setQueryLogId(doc.getInteger("_id"));
+        log.setUserId(doc.getInteger("user_id"));
+        log.setNaturalLanguageQuery(doc.getString("natural_language_query"));
+        log.setGeneratedSql(doc.getString("generated_sql"));
+        log.setResponseSummary(doc.getString("response_summary"));
+        Boolean success = doc.getBoolean("success");
+        log.setSuccess(success != null && success);
+        log.setErrorMessage(doc.getString("error_message"));
+        log.setCreatedAt(doc.getDate("created_at").toInstant());
         return log;
     }
 }

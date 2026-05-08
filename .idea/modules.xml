@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-symptom-tracking-system.iml" filepath="$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-symptom-tracking-system.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-tracker.iml" filepath="$PROJECT_DIR$/.idea/ai-assisted-pet-allergy-tracker.iml" />
     </modules>
   </component>
 </project>

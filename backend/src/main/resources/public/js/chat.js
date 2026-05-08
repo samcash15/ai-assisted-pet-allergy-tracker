@@ -97,11 +97,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 html += `<div class="mt-2 px-3 py-2 bg-rose-50 border border-rose-200 rounded-lg"><p class="text-sm text-rose-700">${escapeHtml(response.error)}</p></div>`;
             }
 
-            // SQL (collapsible)
+            // Aggregation pipeline (collapsible)
             if (response.generatedSql) {
                 html += `
                     <details class="mt-3">
-                        <summary class="text-xs text-teal-600 cursor-pointer hover:text-teal-800 font-medium">Show SQL</summary>
+                        <summary class="text-xs text-teal-600 cursor-pointer hover:text-teal-800 font-medium">Show Pipeline</summary>
                         <pre class="mt-2 bg-stone-800 text-emerald-400 text-xs p-3 rounded-lg overflow-x-auto font-mono">${escapeHtml(response.generatedSql)}</pre>
                     </details>
                 `;

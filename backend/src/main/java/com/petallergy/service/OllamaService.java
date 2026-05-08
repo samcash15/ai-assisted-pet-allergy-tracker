@@ -1,17 +1,19 @@
 package com.petallergy.service;
 
+import com.mongodb.client.MongoDatabase;
 import com.petallergy.dao.LlmQueryLogDao;
 import com.petallergy.model.LlmQueryLog;
+import org.bson.BsonArray;
+import org.bson.BsonDocument;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.*;
 import java.time.Duration;
 import java.util.*;
 
@@ -21,291 +23,190 @@ public class OllamaService {
     private static final String OLLAMA_URL = "http://localhost:11434/api/generate";
     private static final String MODEL = "llama3.2";
     private static final Duration TIMEOUT = Duration.ofSeconds(60);
+    private static final int MAX_RETRIES = 2;
 
-    private final DataSource ds;
+    private final MongoDatabase db;
     private final LlmQueryLogDao llmQueryLogDao;
     private final HttpClient httpClient;
 
+    // Allowed collections the LLM may query
+    private static final Set<String> ALLOWED_COLLECTIONS = Set.of(
+        "symptom_logs", "treatment_logs", "env_factor_logs",
+        "symptom_types", "env_factor_types",
+        "treatments", "users", "llm_query_logs"
+    );
+
     private static final String SCHEMA_CONTEXT = """
-        You are a PostgreSQL query generator. You ONLY output a single raw SELECT query. No explanations, no markdown, no comments, no semicolons.
+        You are a MongoDB aggregation pipeline generator for a pet allergy tracking application.
+        Output ONLY a single JSON object with exactly two fields: "collection" and "pipeline".
+        No markdown, no explanation, no extra text — just the raw JSON object.
 
-        === DATABASE SCHEMA (exact CREATE TABLE definitions) ===
+        === COLLECTION SCHEMAS (all fields snake_case) ===
 
-        CREATE TABLE users (
-            user_id SERIAL PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+        "symptom_logs" — one document per observed symptom:
+        {
+          pet_id: int, pet_name: string,
+          symptom_type: string,  // e.g. "Itching", "Skin Redness", "Sneezing", "Ear Inflammation", "Paw Licking", "Watery Eyes", "Nasal Discharge"
+          severity: int (1–10), notes: string, logged_at: Date
+        }
 
-        CREATE TABLE pets (
-            pet_id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL REFERENCES users(user_id),
-            name VARCHAR(100) NOT NULL,
-            species VARCHAR(50) NOT NULL,
-            breed VARCHAR(100),
-            date_of_birth DATE,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+        "treatment_logs" — one document per treatment administration:
+        {
+          pet_id: int, pet_name: string,
+          treatment_name: string,  // e.g. "Apoquel", "Cytopoint Injection", "Medicated Shampoo", "Grain-Free Diet", "Hydrocortisone Cream"
+          treatment_type: string,  // "medication", "topical", "dietary", "therapy"
+          dosage: string, notes: string, administered_at: Date
+        }
 
-        CREATE TABLE symptom_types (
-            symptom_type_id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL UNIQUE,
-            description TEXT
-        );
+        "env_factor_logs" — one document per environmental reading:
+        {
+          pet_id: int, pet_name: string,
+          factor_name: string,  // e.g. "Pollen Count", "Temperature", "Humidity", "Mold Spore Count"
+          unit: string,         // e.g. "index", "°F", "%"
+          value: double, notes: string, logged_at: Date
+        }
 
-        CREATE TABLE symptom_logs (
-            symptom_log_id SERIAL PRIMARY KEY,
-            pet_id INTEGER NOT NULL REFERENCES pets(pet_id),
-            symptom_type_id INTEGER NOT NULL REFERENCES symptom_types(symptom_type_id),
-            severity INTEGER NOT NULL CHECK (severity BETWEEN 1 AND 10),
-            notes TEXT,
-            logged_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+        "users":            { _id: int, username: string, email: string, created_at: Date,
+                              pets: [{ _id: int, name: string, species: string, breed: string, date_of_birth: Date }] }
+        "symptom_types":    { _id: int, name: string, description: string }
+        "treatments":       { _id: int, name: string, treatment_type: string, description: string }
+        "env_factor_types": { _id: int, name: string, unit: string, description: string }
 
-        CREATE TABLE treatments (
-            treatment_id SERIAL PRIMARY KEY,
-            name VARCHAR(150) NOT NULL UNIQUE,
-            treatment_type VARCHAR(20) NOT NULL CHECK (treatment_type IN ('medication','topical','dietary','therapy')),
-            description TEXT
-        );
+        === AGGREGATION PATTERNS ===
 
-        CREATE TABLE treatment_logs (
-            treatment_log_id SERIAL PRIMARY KEY,
-            pet_id INTEGER NOT NULL REFERENCES pets(pet_id),
-            treatment_id INTEGER NOT NULL REFERENCES treatments(treatment_id),
-            dosage VARCHAR(100),
-            notes TEXT,
-            administered_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+        Filter by pet name (case-insensitive):
+          { "$match": { "pet_name": { "$regex": "finn", "$options": "i" } } }
 
-        CREATE TABLE env_factor_types (
-            env_factor_type_id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL UNIQUE,
-            unit VARCHAR(50),
-            description TEXT
-        );
+        Filter by date range (use $date with ISO-8601 string):
+          { "$match": { "logged_at": { "$gte": { "$date": "2026-01-01T00:00:00Z" } } } }
 
-        CREATE TABLE env_factor_logs (
-            env_factor_log_id SERIAL PRIMARY KEY,
-            pet_id INTEGER NOT NULL REFERENCES pets(pet_id),
-            env_factor_type_id INTEGER NOT NULL REFERENCES env_factor_types(env_factor_type_id),
-            value NUMERIC(10,2) NOT NULL,
-            notes TEXT,
-            logged_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
+        Group and count:
+          { "$group": { "_id": "$symptom_type", "count": { "$sum": 1 }, "avgSeverity": { "$avg": "$severity" } } }
 
-        === COLUMN LOCATION REFERENCE (MEMORIZE THIS) ===
+        Date bucketing by month:
+          { "$group": { "_id": { "year": { "$year": "$logged_at" }, "month": { "$month": "$logged_at" } }, "avgSeverity": { "$avg": "$severity" }, "total": { "$sum": 1 } } }
 
-        pets table columns:       p.pet_id, p.user_id, p.name, p.species, p.breed, p.date_of_birth
-        symptom_types columns:    st.symptom_type_id, st.name, st.description
-        symptom_logs columns:     sl.symptom_log_id, sl.pet_id, sl.symptom_type_id, sl.severity, sl.notes, sl.logged_at
-        treatments columns:       t.treatment_id, t.name, t.treatment_type, t.description
-        treatment_logs columns:   tl.treatment_log_id, tl.pet_id, tl.treatment_id, tl.dosage, tl.notes, tl.administered_at
-        env_factor_types columns: eft.env_factor_type_id, eft.name, eft.unit, eft.description
-        env_factor_logs columns:  efl.env_factor_log_id, efl.pet_id, efl.env_factor_type_id, efl.value, efl.notes, efl.logged_at
-
-        === COMMON MISTAKES TO AVOID ===
-
-        WRONG: tl.treatment_name  → RIGHT: t.name (treatment name is on the treatments table, not treatment_logs)
-        WRONG: sl.name            → RIGHT: st.name (symptom name is on symptom_types table, not symptom_logs)
-        WRONG: efl.name           → RIGHT: eft.name (factor name is on env_factor_types table, not env_factor_logs)
-        WRONG: tl.name            → RIGHT: t.name (treatment name is on the treatments table, not treatment_logs)
-        WRONG: p.username         → RIGHT: p.name (the pet's name column is "name", not "username"; username is on users table)
-        WRONG: sl.treatment_id    → RIGHT: treatment_id only exists on treatment_logs, NOT on symptom_logs
-        WRONG: tl.symptom_type_id → RIGHT: symptom_type_id only exists on symptom_logs, NOT on treatment_logs
-        WRONG: GROUP BY t.name when SELECT uses tl.treatment_name → all SELECT expressions must use the SAME alias.column as GROUP BY
-
-        === CRITICAL JOIN RULES ===
-
-        1. symptom_logs, treatment_logs, and env_factor_logs are THREE SEPARATE log tables.
-           They NEVER directly join to each other. They ALL connect through pet_id.
-        2. To correlate symptoms with treatments: JOIN both to the same pet_id, then compare dates.
-        3. ALWAYS join type/reference tables to get human-readable names:
-           - symptom_logs → JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id → use st.name
-           - treatment_logs → JOIN treatments t ON tl.treatment_id = t.treatment_id → use t.name
-           - env_factor_logs → JOIN env_factor_types eft ON efl.env_factor_type_id = eft.env_factor_type_id → use eft.name
-        4. To filter by pet name: JOIN pets p ON <log>.pet_id = p.pet_id WHERE p.name ILIKE '%petname%'
-        5. EVERY table alias in SELECT, WHERE, GROUP BY, ORDER BY MUST appear in FROM or JOIN.
-        6. SELECT columns and GROUP BY columns must be consistent — use the SAME alias.column in both.
-
-        === STANDARD ALIASES ===
-        pets = p, symptom_logs = sl, symptom_types = st, treatment_logs = tl, treatments = t,
-        env_factor_logs = efl, env_factor_types = eft, users = u
+        Format date as string:
+          { "$project": { "date": { "$dateToString": { "format": "%Y-%m-%d", "date": "$logged_at" } }, "severity": 1 } }
 
         === EXAMPLE QUERIES ===
 
         Q: What are the most common symptoms?
-        SELECT st.name AS symptom_name, COUNT(*) AS occurrences, ROUND(AVG(sl.severity), 1) AS avg_severity
-        FROM symptom_logs sl
-        JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id
-        GROUP BY st.name
-        ORDER BY occurrences DESC
-        LIMIT 50
-
-        Q: Which treatments helped reduce itching?
-        SELECT t.name AS treatment_name, ROUND(AVG(sl.severity), 1) AS avg_severity_after, COUNT(*) AS observations
-        FROM treatment_logs tl
-        JOIN treatments t ON tl.treatment_id = t.treatment_id
-        JOIN symptom_logs sl ON sl.pet_id = tl.pet_id
-            AND sl.logged_at BETWEEN tl.administered_at AND tl.administered_at + INTERVAL '3 days'
-        JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id
-        WHERE st.name ILIKE '%itching%'
-        GROUP BY t.name
-        ORDER BY avg_severity_after ASC
-        LIMIT 50
+        {"collection":"symptom_logs","pipeline":[{"$group":{"_id":"$symptom_type","count":{"$sum":1},"avgSeverity":{"$avg":"$severity"}}},{"$sort":{"count":-1}},{"$limit":50}]}
 
         Q: Show average severity by month
-        SELECT date_trunc('month', sl.logged_at) AS month, ROUND(AVG(sl.severity), 1) AS avg_severity, COUNT(*) AS total_logs
-        FROM symptom_logs sl
-        JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id
-        GROUP BY month
-        ORDER BY month
-        LIMIT 50
-
-        Q: Is there a correlation between pollen and symptoms?
-        SELECT efl.logged_at::date AS date, efl.value AS pollen_index, ROUND(AVG(sl.severity), 1) AS avg_severity
-        FROM env_factor_logs efl
-        JOIN env_factor_types eft ON efl.env_factor_type_id = eft.env_factor_type_id
-        JOIN symptom_logs sl ON sl.pet_id = efl.pet_id
-            AND sl.logged_at::date = efl.logged_at::date
-        WHERE eft.name ILIKE '%pollen%'
-        GROUP BY efl.logged_at::date, efl.value
-        ORDER BY date
-        LIMIT 50
+        {"collection":"symptom_logs","pipeline":[{"$group":{"_id":{"year":{"$year":"$logged_at"},"month":{"$month":"$logged_at"}},"avgSeverity":{"$avg":"$severity"},"totalLogs":{"$sum":1}}},{"$sort":{"_id.year":1,"_id.month":1}},{"$limit":50}]}
 
         Q: What treatments has Finn received?
-        SELECT t.name AS treatment_name, t.treatment_type, COUNT(*) AS times_administered, MAX(tl.administered_at) AS last_administered
-        FROM treatment_logs tl
-        JOIN treatments t ON tl.treatment_id = t.treatment_id
-        JOIN pets p ON tl.pet_id = p.pet_id
-        WHERE p.name ILIKE '%finn%'
-        GROUP BY t.name, t.treatment_type
-        ORDER BY times_administered DESC
-        LIMIT 50
+        {"collection":"treatment_logs","pipeline":[{"$match":{"pet_name":{"$regex":"finn","$options":"i"}}},{"$group":{"_id":{"name":"$treatment_name","type":"$treatment_type"},"count":{"$sum":1},"last":{"$max":"$administered_at"}}},{"$sort":{"count":-1}},{"$limit":50}]}
 
-        Q: How is Archie doing today?
-        SELECT st.name AS symptom_name, sl.severity, sl.notes, sl.logged_at
-        FROM symptom_logs sl
-        JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id
-        JOIN pets p ON sl.pet_id = p.pet_id
-        WHERE p.name ILIKE '%archie%'
-            AND sl.logged_at::date = CURRENT_DATE
-        ORDER BY sl.logged_at DESC
-        LIMIT 50
+        Q: Is there a correlation between pollen and symptoms?
+        {"collection":"env_factor_logs","pipeline":[{"$match":{"factor_name":{"$regex":"pollen","$options":"i"}}},{"$project":{"date":{"$dateToString":{"format":"%Y-%m-%d","date":"$logged_at"}},"pollenIndex":"$value","notes":1}},{"$sort":{"pollenIndex":-1}},{"$limit":50}]}
 
-        Q: Show symptom severity trend over time for itching
-        SELECT sl.logged_at::date AS date, sl.severity, sl.notes
-        FROM symptom_logs sl
-        JOIN symptom_types st ON sl.symptom_type_id = st.symptom_type_id
-        WHERE st.name ILIKE '%itching%'
-        ORDER BY sl.logged_at
-        LIMIT 50
+        Q: How is Finn doing today?
+        {"collection":"symptom_logs","pipeline":[{"$match":{"pet_name":{"$regex":"finn","$options":"i"},"logged_at":{"$gte":{"$date":"2026-05-05T00:00:00Z"},"$lte":{"$date":"2026-05-05T23:59:59Z"}}}},{"$project":{"symptom_type":1,"severity":1,"notes":1,"logged_at":1}},{"$sort":{"logged_at":-1}},{"$limit":50}]}
+
+        Q: Show Finn's itching severity trend over time
+        {"collection":"symptom_logs","pipeline":[{"$match":{"pet_name":{"$regex":"finn","$options":"i"},"symptom_type":{"$regex":"itching","$options":"i"}}},{"$project":{"date":{"$dateToString":{"format":"%Y-%m-%d","date":"$logged_at"}},"severity":1,"notes":1}},{"$sort":{"logged_at":1}},{"$limit":50}]}
 
         Q: When was pollen highest?
-        SELECT efl.logged_at::date AS date, efl.value AS pollen_index, efl.notes
-        FROM env_factor_logs efl
-        JOIN env_factor_types eft ON efl.env_factor_type_id = eft.env_factor_type_id
-        WHERE eft.name ILIKE '%pollen%'
-        ORDER BY efl.value DESC
-        LIMIT 50
+        {"collection":"env_factor_logs","pipeline":[{"$match":{"factor_name":{"$regex":"pollen","$options":"i"}}},{"$project":{"date":{"$dateToString":{"format":"%Y-%m-%d","date":"$logged_at"}},"pollenIndex":"$value","notes":1}},{"$sort":{"pollenIndex":-1}},{"$limit":50}]}
+
+        Q: Which treatments were used during high-severity weeks?
+        {"collection":"treatment_logs","pipeline":[{"$group":{"_id":"$treatment_name","count":{"$sum":1},"lastUsed":{"$max":"$administered_at"}}},{"$sort":{"count":-1}},{"$limit":50}]}
 
         === OUTPUT RULES ===
-        1. Output ONLY the raw SQL SELECT query.
-        2. No markdown fences, no explanations, no comments, no semicolons.
-        3. Use ILIKE for all name matching (case-insensitive).
-        4. Always end with LIMIT 50.
-        5. Use meaningful column aliases.
-        6. NEVER use a column that does not exist on that table. Refer to COLUMN LOCATION REFERENCE above.
+        1. Output ONLY the raw JSON object — no markdown, no explanation, nothing else.
+        2. "collection" must be one of: symptom_logs, treatment_logs, env_factor_logs, symptom_types, treatments, env_factor_types, users, llm_query_logs
+        3. "pipeline" must be a valid MongoDB aggregation array.
+        4. Always use "$regex" with "$options": "i" for case-insensitive name matching.
+        5. NEVER use "$out" or "$merge" (write operations are forbidden).
+        6. Always end the pipeline with {"$limit": 50}.
+        7. Field names are snake_case: pet_name, symptom_type, logged_at, administered_at, treatment_name, factor_name, etc.
         """;
 
     private static final String SUMMARY_PROMPT_PREFIX = """
-        You are a helpful veterinary health assistant. Given the following SQL query results about a pet's allergy data,
+        You are a helpful veterinary health assistant. Given the following MongoDB query results about a pet's allergy data,
         provide a concise, friendly natural language summary. Focus on key insights and trends.
         Be specific with numbers and dates when available. Keep the response to 2-4 sentences.
 
         Query results:
         """;
 
-    public OllamaService(DataSource ds, LlmQueryLogDao llmQueryLogDao) {
-        this.ds = ds;
+    public OllamaService(MongoDatabase db, LlmQueryLogDao llmQueryLogDao) {
+        this.db = db;
         this.llmQueryLogDao = llmQueryLogDao;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
 
-    private static final int MAX_RETRIES = 2;
-
     public Map<String, Object> processQuery(String naturalLanguageQuery, int userId) throws Exception {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("naturalLanguageQuery", naturalLanguageQuery);
 
-        String generatedSql = null;
+        String generatedQuery = null;
         String responseSummary = null;
         boolean success = false;
         String errorMessage = null;
         List<Map<String, Object>> results = null;
 
         try {
-            // Step 1: Generate SQL from natural language
-            generatedSql = generateSql(naturalLanguageQuery);
-            log.info("Generated SQL (attempt 1): {}", generatedSql);
+            // Step 1: Generate MongoDB aggregation pipeline
+            generatedQuery = generateQuery(naturalLanguageQuery);
+            log.info("Generated query (attempt 1): {}", generatedQuery);
 
-            // Step 2: Sanitize — must be SELECT only
-            String sanitized = sanitizeSql(generatedSql);
+            // Step 2: Validate — must target an allowed collection, no write stages
+            String validated = validateQuery(generatedQuery);
 
-            // Step 3: Execute with retry — if SQL fails, ask LLM to fix it
+            // Step 3: Execute with retry — if query fails, ask LLM to fix it
             Exception lastError = null;
             for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
                 try {
-                    results = executeReadOnlyQuery(sanitized);
+                    results = executeAggregation(validated);
                     lastError = null;
                     break;
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     lastError = e;
                     if (attempt < MAX_RETRIES) {
-                        log.warn("SQL failed (attempt {}), asking LLM to fix: {}", attempt + 1, e.getMessage());
-                        generatedSql = fixSql(naturalLanguageQuery, sanitized, e.getMessage());
-                        log.info("Fixed SQL (attempt {}): {}", attempt + 2, generatedSql);
-                        sanitized = sanitizeSql(generatedSql);
+                        log.warn("Query failed (attempt {}), asking LLM to fix: {}", attempt + 1, e.getMessage());
+                        generatedQuery = fixQuery(naturalLanguageQuery, validated, e.getMessage());
+                        log.info("Fixed query (attempt {}): {}", attempt + 2, generatedQuery);
+                        validated = validateQuery(generatedQuery);
                     }
                 }
             }
 
-            if (lastError != null) {
-                throw lastError;
-            }
+            if (lastError != null) throw lastError;
 
-            response.put("generatedSql", generatedSql);
+            response.put("generatedSql", generatedQuery);
             response.put("results", results);
 
             // Step 4: Summarize results
             responseSummary = summarizeResults(naturalLanguageQuery, results);
             response.put("responseSummary", responseSummary);
-
             success = true;
 
-        } catch (SqlRejectionException e) {
+        } catch (QueryRejectionException e) {
             errorMessage = e.getMessage();
-            response.put("generatedSql", generatedSql);
+            response.put("generatedSql", generatedQuery);
             response.put("error", errorMessage);
-            log.warn("SQL rejected: {}", errorMessage);
+            log.warn("Query rejected: {}", errorMessage);
         } catch (ConnectException e) {
             throw new OllamaUnavailableException("Ollama is not running");
         } catch (Exception e) {
             errorMessage = "Query execution failed: " + e.getMessage();
-            response.put("generatedSql", generatedSql);
+            response.put("generatedSql", generatedQuery);
             response.put("error", errorMessage);
             log.error("Query processing failed", e);
         }
 
-        // Step 5: Log query
+        // Step 5: Audit log
         try {
             LlmQueryLog queryLog = new LlmQueryLog();
             queryLog.setUserId(userId);
             queryLog.setNaturalLanguageQuery(naturalLanguageQuery);
-            queryLog.setGeneratedSql(generatedSql);
+            queryLog.setGeneratedSql(generatedQuery);
             queryLog.setResponseSummary(responseSummary);
             queryLog.setSuccess(success);
             queryLog.setErrorMessage(errorMessage);
@@ -317,26 +218,23 @@ public class OllamaService {
         return response;
     }
 
-    private String generateSql(String naturalLanguageQuery) throws Exception {
+    private String generateQuery(String naturalLanguageQuery) throws Exception {
         String prompt = SCHEMA_CONTEXT + "\nUser question: " + naturalLanguageQuery;
         return callOllama(prompt).trim();
     }
 
-    private String fixSql(String originalQuestion, String failedSql, String errorMessage) throws Exception {
+    private String fixQuery(String originalQuestion, String failedQuery, String errorMessage) throws Exception {
         String prompt = SCHEMA_CONTEXT + "\n\n" +
-            "The following SQL query was generated for the question: " + originalQuestion + "\n\n" +
-            "FAILED SQL:\n" + failedSql + "\n\n" +
-            "POSTGRESQL ERROR:\n" + errorMessage + "\n\n" +
-            "Fix the SQL query to resolve this error. Remember these EXACT column locations:\n" +
-            "- treatment name = t.name (on treatments table, NOT tl.treatment_name or tl.name)\n" +
-            "- symptom name = st.name (on symptom_types table, NOT sl.name)\n" +
-            "- env factor name = eft.name (on env_factor_types table, NOT efl.name)\n" +
-            "- pet name = p.name (on pets table, NOT p.username)\n" +
-            "- treatment_logs columns: tl.treatment_log_id, tl.pet_id, tl.treatment_id, tl.dosage, tl.notes, tl.administered_at\n" +
-            "- symptom_logs columns: sl.symptom_log_id, sl.pet_id, sl.symptom_type_id, sl.severity, sl.notes, sl.logged_at\n" +
-            "- SELECT columns and GROUP BY columns must use the SAME alias.column\n" +
-            "- Every table alias in SELECT/WHERE/GROUP BY must have a matching FROM/JOIN\n" +
-            "Output ONLY the corrected raw SQL query, nothing else.";
+            "The following MongoDB aggregation was generated for: " + originalQuestion + "\n\n" +
+            "FAILED QUERY:\n" + failedQuery + "\n\n" +
+            "ERROR:\n" + errorMessage + "\n\n" +
+            "Fix the aggregation pipeline to resolve this error. Remember:\n" +
+            "- All field names are snake_case: pet_name, symptom_type, logged_at, administered_at, treatment_name, factor_name\n" +
+            "- Use $regex with $options 'i' for case-insensitive matching\n" +
+            "- Date comparisons use {$gte: {$date: 'ISO-string'}}\n" +
+            "- NEVER use $out or $merge\n" +
+            "- End pipeline with {$limit: 50}\n" +
+            "Output ONLY the corrected JSON object, nothing else.";
         return callOllama(prompt).trim();
     }
 
@@ -344,9 +242,7 @@ public class OllamaService {
         if (results == null || results.isEmpty()) {
             return "No results were found for your query.";
         }
-
         StringBuilder sb = new StringBuilder(SUMMARY_PROMPT_PREFIX);
-        // Include up to 20 rows for summarization
         int limit = Math.min(results.size(), 20);
         for (int i = 0; i < limit; i++) {
             sb.append(results.get(i).toString()).append("\n");
@@ -355,8 +251,89 @@ public class OllamaService {
             sb.append("... and ").append(results.size() - 20).append(" more rows\n");
         }
         sb.append("\nOriginal question: ").append(originalQuery);
-
         return callOllama(sb.toString()).trim();
+    }
+
+    // Visible for testing
+    String validateQuery(String queryJson) throws QueryRejectionException {
+        if (queryJson == null || queryJson.isBlank()) {
+            throw new QueryRejectionException("Generated query was empty");
+        }
+
+        // Strip markdown code fences if present
+        String cleaned = queryJson.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+
+        if (cleaned.isBlank()) {
+            throw new QueryRejectionException("Generated query was empty after stripping markdown");
+        }
+
+        // Parse using BsonDocument for strict extended-JSON validation
+        BsonDocument parsed;
+        try {
+            parsed = BsonDocument.parse(cleaned);
+        } catch (Exception e) {
+            throw new QueryRejectionException("Invalid JSON: " + e.getMessage());
+        }
+
+        // Validate collection name
+        if (!parsed.containsKey("collection")) {
+            throw new QueryRejectionException("Missing 'collection' field");
+        }
+        String collectionName = parsed.getString("collection").getValue();
+        if (!ALLOWED_COLLECTIONS.contains(collectionName)) {
+            throw new QueryRejectionException("Unknown collection: " + collectionName);
+        }
+
+        // Validate pipeline
+        if (!parsed.containsKey("pipeline") || !parsed.get("pipeline").isArray()) {
+            throw new QueryRejectionException("Missing or invalid 'pipeline' array");
+        }
+
+        // Block write stages
+        BsonArray pipeline = parsed.getArray("pipeline");
+        for (var stage : pipeline) {
+            if (stage.isDocument()) {
+                BsonDocument stageDoc = stage.asDocument();
+                if (stageDoc.containsKey("$out") || stageDoc.containsKey("$merge")) {
+                    throw new QueryRejectionException("Write stage ($out / $merge) is not permitted");
+                }
+            }
+        }
+
+        return cleaned;
+    }
+
+    // Visible for testing
+    List<Map<String, Object>> executeAggregation(String queryJson) throws Exception {
+        BsonDocument parsed = BsonDocument.parse(queryJson);
+        String collectionName = parsed.getString("collection").getValue();
+        BsonArray pipelineArray = parsed.getArray("pipeline");
+
+        List<BsonDocument> pipeline = new ArrayList<>();
+        for (var stage : pipelineArray) {
+            pipeline.add(stage.asDocument());
+        }
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        db.getCollection(collectionName).aggregate(pipeline)
+          .forEach(doc -> results.add(docToMap(doc)));
+        return results;
+    }
+
+    private Map<String, Object> docToMap(Document doc) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : doc.entrySet()) {
+            String key = "_id".equals(entry.getKey()) ? "id" : entry.getKey();
+            Object val = entry.getValue();
+            if (val instanceof Date) {
+                map.put(key, ((Date) val).toInstant().toString());
+            } else if (val instanceof Document) {
+                map.put(key, docToMap((Document) val));
+            } else {
+                map.put(key, val != null ? val.toString() : null);
+            }
+        }
+        return map;
     }
 
     private String callOllama(String prompt) throws Exception {
@@ -378,78 +355,10 @@ public class OllamaService {
             throw new RuntimeException("Ollama returned status " + httpResponse.statusCode());
         }
 
-        // Parse response — extract "response" field from JSON
-        String body = httpResponse.body();
-        return extractJsonField(body, "response");
-    }
-
-    String sanitizeSql(String sql) throws SqlRejectionException {
-        if (sql == null || sql.isBlank()) {
-            throw new SqlRejectionException("Generated SQL was empty");
-        }
-
-        // Strip markdown code fences if present
-        String cleaned = sql.replaceAll("```sql\\s*", "").replaceAll("```\\s*", "").trim();
-
-        // Remove trailing semicolons
-        if (cleaned.endsWith(";")) {
-            cleaned = cleaned.substring(0, cleaned.length() - 1).trim();
-        }
-
-        // Must start with SELECT (case-insensitive)
-        if (!cleaned.toUpperCase().startsWith("SELECT")) {
-            throw new SqlRejectionException("Only SELECT queries are allowed. Got: " + cleaned.substring(0, Math.min(cleaned.length(), 50)));
-        }
-
-        // Reject dangerous keywords
-        String upper = cleaned.toUpperCase();
-        for (String keyword : List.of("INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE", "GRANT", "REVOKE")) {
-            // Check that these keywords aren't part of a SELECT (e.g. in a string literal or column alias)
-            // Simple check: if the keyword appears outside a SELECT context as a statement start
-            if (upper.matches(".*\\b" + keyword + "\\b.*") && !keyword.equals("CREATE")) {
-                // Allow if it's in a subquery context or WHERE clause value, but not as statement start
-                // For safety, reject if it appears to be a standalone statement
-                String[] parts = cleaned.split(";");
-                for (String part : parts) {
-                    String trimmed = part.trim().toUpperCase();
-                    if (trimmed.startsWith(keyword)) {
-                        throw new SqlRejectionException("Dangerous SQL keyword detected: " + keyword);
-                    }
-                }
-            }
-        }
-
-        return cleaned;
-    }
-
-    List<Map<String, Object>> executeReadOnlyQuery(String sql) throws SQLException {
-        List<Map<String, Object>> results = new ArrayList<>();
-        try (Connection conn = ds.getConnection()) {
-            conn.setReadOnly(true);
-            try (Statement stmt = conn.createStatement()) {
-                stmt.setQueryTimeout(5);
-                try (ResultSet rs = stmt.executeQuery(sql)) {
-                    ResultSetMetaData meta = rs.getMetaData();
-                    int columnCount = meta.getColumnCount();
-                    while (rs.next()) {
-                        Map<String, Object> row = new LinkedHashMap<>();
-                        for (int i = 1; i <= columnCount; i++) {
-                            String colName = meta.getColumnLabel(i);
-                            Object value = rs.getObject(i);
-                            row.put(colName, value != null ? value.toString() : null);
-                        }
-                        results.add(row);
-                    }
-                }
-            } finally {
-                conn.setReadOnly(false);
-            }
-        }
-        return results;
+        return extractJsonField(httpResponse.body(), "response");
     }
 
     private static String extractJsonField(String json, String field) {
-        // Simple JSON field extraction without a library dependency
         String key = "\"" + field + "\":\"";
         int start = json.indexOf(key);
         if (start == -1) {
@@ -487,12 +396,12 @@ public class OllamaService {
         StringBuilder sb = new StringBuilder("\"");
         for (char c : text.toCharArray()) {
             switch (c) {
-                case '"': sb.append("\\\""); break;
+                case '"':  sb.append("\\\""); break;
                 case '\\': sb.append("\\\\"); break;
-                case '\n': sb.append("\\n"); break;
-                case '\r': sb.append("\\r"); break;
-                case '\t': sb.append("\\t"); break;
-                default: sb.append(c);
+                case '\n': sb.append("\\n");  break;
+                case '\r': sb.append("\\r");  break;
+                case '\t': sb.append("\\t");  break;
+                default:   sb.append(c);
             }
         }
         sb.append("\"");
@@ -503,7 +412,7 @@ public class OllamaService {
         public OllamaUnavailableException(String message) { super(message); }
     }
 
-    static class SqlRejectionException extends Exception {
-        SqlRejectionException(String message) { super(message); }
+    static class QueryRejectionException extends Exception {
+        QueryRejectionException(String message) { super(message); }
     }
 }

@@ -1,49 +1,39 @@
 package com.petallergy.dao;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import com.petallergy.model.EnvFactorType;
+import org.bson.Document;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class EnvFactorTypeDao {
 
-    private final DataSource ds;
+    private final MongoCollection<Document> collection;
 
-    public EnvFactorTypeDao(DataSource ds) {
-        this.ds = ds;
+    public EnvFactorTypeDao(MongoDatabase db) {
+        this.collection = db.getCollection("env_factor_types");
     }
 
-    public List<EnvFactorType> findAll() throws SQLException {
-        String sql = "SELECT env_factor_type_id, name, unit, description FROM env_factor_types ORDER BY name";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            List<EnvFactorType> types = new ArrayList<>();
-            while (rs.next()) types.add(mapRow(rs));
-            return types;
-        }
+    public List<EnvFactorType> findAll() {
+        List<EnvFactorType> types = new ArrayList<>();
+        collection.find().sort(Sorts.ascending("name")).forEach(doc -> types.add(mapDoc(doc)));
+        return types;
     }
 
-    public EnvFactorType findById(int id) throws SQLException {
-        String sql = "SELECT env_factor_type_id, name, unit, description FROM env_factor_types WHERE env_factor_type_id = ?";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
-                return null;
-            }
-        }
+    public EnvFactorType findById(int id) {
+        Document doc = collection.find(Filters.eq("_id", id)).first();
+        return doc != null ? mapDoc(doc) : null;
     }
 
-    private EnvFactorType mapRow(ResultSet rs) throws SQLException {
+    private EnvFactorType mapDoc(Document doc) {
         EnvFactorType eft = new EnvFactorType();
-        eft.setEnvFactorTypeId(rs.getInt("env_factor_type_id"));
-        eft.setName(rs.getString("name"));
-        eft.setUnit(rs.getString("unit"));
-        eft.setDescription(rs.getString("description"));
+        eft.setEnvFactorTypeId(doc.getInteger("_id"));
+        eft.setName(doc.getString("name"));
+        eft.setUnit(doc.getString("unit"));
+        eft.setDescription(doc.getString("description"));
         return eft;
     }
 }

@@ -1,49 +1,39 @@
 package com.petallergy.dao;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import com.petallergy.model.Treatment;
+import org.bson.Document;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class TreatmentDao {
 
-    private final DataSource ds;
+    private final MongoCollection<Document> collection;
 
-    public TreatmentDao(DataSource ds) {
-        this.ds = ds;
+    public TreatmentDao(MongoDatabase db) {
+        this.collection = db.getCollection("treatments");
     }
 
-    public List<Treatment> findAll() throws SQLException {
-        String sql = "SELECT treatment_id, name, treatment_type, description FROM treatments ORDER BY name";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            List<Treatment> treatments = new ArrayList<>();
-            while (rs.next()) treatments.add(mapRow(rs));
-            return treatments;
-        }
+    public List<Treatment> findAll() {
+        List<Treatment> treatments = new ArrayList<>();
+        collection.find().sort(Sorts.ascending("name")).forEach(doc -> treatments.add(mapDoc(doc)));
+        return treatments;
     }
 
-    public Treatment findById(int id) throws SQLException {
-        String sql = "SELECT treatment_id, name, treatment_type, description FROM treatments WHERE treatment_id = ?";
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
-                return null;
-            }
-        }
+    public Treatment findById(int id) {
+        Document doc = collection.find(Filters.eq("_id", id)).first();
+        return doc != null ? mapDoc(doc) : null;
     }
 
-    private Treatment mapRow(ResultSet rs) throws SQLException {
+    private Treatment mapDoc(Document doc) {
         Treatment t = new Treatment();
-        t.setTreatmentId(rs.getInt("treatment_id"));
-        t.setName(rs.getString("name"));
-        t.setTreatmentType(rs.getString("treatment_type"));
-        t.setDescription(rs.getString("description"));
+        t.setTreatmentId(doc.getInteger("_id"));
+        t.setName(doc.getString("name"));
+        t.setTreatmentType(doc.getString("treatment_type"));
+        t.setDescription(doc.getString("description"));
         return t;
     }
 }
